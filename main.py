@@ -21,7 +21,6 @@ class Node:
 def general_search(initial_state, mode): 
     # general search algorithm based on the project pseudocode
 
-    # TODO: Implement the search loop
     # nodes = MAKE_QUEUE(MAKE_NODE(problem.INITIAL_STATE))
     # loop do
     #   if EMPTY(nodes) then return "failure"
@@ -51,12 +50,12 @@ def general_search(initial_state, mode):
         for row in node.state:
             print(row)
         
-        # Check if goal state is reached
+        # check if goal state is reached
         if goal_test(node.state):
             print(f"\nGoal reached! Depth: {node.depth}, Nodes expanded: {num_expanded}")
             return node
         
-        # Convert state to tuple to store in 'visited' set
+        # convert state to tuple to store in 'visited' set
         state_tuple = tuple(tuple(row) for row in node.state)
         if state_tuple in visited:
             continue
@@ -137,11 +136,27 @@ def calculate_heuristic(state, heuristic_mode):
     if heuristic_mode == 1:
         return 0
     elif heuristic_mode == 2:
-        # TODO: Implement Misplaced Tile logic
-        pass
+        # count number of tiles are in wrong position
+        misplaced_count = 0
+        for i in range(3):
+            for j in range(3):
+                # blank (0) does not count as misplaced
+                if state[i][j] != 0 and state[i][j] != GOAL_STATE[i][j]:
+                    misplaced_count += 1
+        return misplaced_count
     elif heuristic_mode == 3:
-        # TODO: Implement Manhattan Distance logic
-        pass
+        # sum Manhattan distance for each tile
+        manhattan_distance = 0
+        for i in range(3):
+            for j in range(3):
+                if state[i][j] != 0:  # skip blank tile (0)  
+                    tile = state[i][j]
+                    # find where tile should be in goal state
+                    goal_i = (tile - 1) // 3
+                    goal_j = (tile - 1) % 3
+                    # add the Manhattan distance (abs diff in rows + cols)
+                    manhattan_distance += abs(i - goal_i) + abs(j - goal_j)
+        return manhattan_distance
     return 0
 
 def main():
