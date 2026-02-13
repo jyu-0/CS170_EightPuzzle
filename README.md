@@ -24,7 +24,7 @@ After running, follow the on-screen prompts to select a default puzzle or enter 
 ## Development Status
 * [x] Initial Repository Setup
 * [x] Main Driver Skeleton (matches the pseudocode)
-* [ ] Implementation of Node class and State representation
-* [ ] Implementation of EXPAND function (operators)
+* [x] Implementation of Node class and State representation
+* [x] Implementation of EXPAND function (operators)
 * [ ] Implementation of Search Algorithms (UCS, A*)
 * [ ] Testing and Report Generation

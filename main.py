@@ -1,5 +1,6 @@
 import sys
 import heapq
+import copy
 
 # goal state for puzzle (0 is the blank)
 GOAL_STATE = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
@@ -11,12 +12,13 @@ class Node:
         self.operator = operator
         self.depth = depth
         self.cost = cost
+        self.h = 0
 
     # magic method less than for priority queue to compare nodes
     def __lt__(self, other):
         return self.cost < other.cost
 
-def general_search(problem, queueing_function): 
+def general_search(initial_state, mode): 
     # general search algorithm based on the project pseudocode
 
     # TODO: Implement the search loop
@@ -27,7 +29,46 @@ def general_search(problem, queueing_function):
     #   if GOAL_TEST(node.STATE) succeeds then return node
     #   nodes = QUEUEING_FUNCTION(nodes, EXPAND(node, problem.OPERATORS))
     # end
-    return None
+
+    visited = set() 
+    
+    #initial node
+    root = make_node(initial_state)
+    root.h = calculate_heuristic(root.state, mode)
+    root.cost = root.depth + root.h # f(n) = g(n) + h(n)
+    
+    nodes = make_queue(root)
+    num_expanded = 0
+    max_queue_size = 1
+
+    while True:
+        if not nodes:
+            return "failure"
+        
+        node = remove_front(nodes)
+        
+        print(f"The best state to expand with g(n) = {node.depth} and h(n) = {node.h} is...")
+        for row in node.state:
+            print(row)
+        
+        # Check if goal state is reached
+        if goal_test(node.state):
+            print(f"\nGoal reached! Depth: {node.depth}, Nodes expanded: {num_expanded}")
+            return node
+        
+        # Convert state to tuple to store in 'visited' set
+        state_tuple = tuple(tuple(row) for row in node.state)
+        if state_tuple in visited:
+            continue
+        visited.add(state_tuple)
+
+        num_expanded += 1
+        for child in expand(node):
+            child.h = calculate_heuristic(child.state, mode)
+            child.cost = child.depth + child.h
+            queueing_function(nodes, [child])
+        
+        max_queue_size = max(max_queue_size, len(nodes))
 
 def make_node(state):
     # creates a node with state
@@ -47,10 +88,39 @@ def goal_test(state):
     # check if the current state matches the goal 
     return state == GOAL_STATE
 
-def expand(node, operators):
+def expand(node):
     # generates the successors of a node by applying operators (moves).
     successors = []
-    # TODO: add the logic to move Blank (0) Up, Down, Left, Right
+    state = node.state
+    size = len(state)
+    
+    # 1. find where blank, 0 is
+    blank_r, blank_c = -1, -1
+    for r in range(size):
+        for c in range(size):
+            if state[r][c] == 0:
+                blank_r, blank_c = r, c
+                break
+
+    # 2. define the moves (row_change, col_change)
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    for dr, dc in moves:
+        new_r, new_c = blank_r + dr, blank_c + dc
+        
+        if 0 <= new_r < size and 0 <= new_c < size:
+            # create copy so we don't mess up the original state
+            new_state = copy.deepcopy(state)
+            
+            # swap blank and new position
+            new_state[blank_r][blank_c], new_state[new_r][new_c] = \
+                new_state[new_r][new_c], new_state[blank_r][blank_c]
+            
+            # create the child node and increase depth by 1 for every mov
+            child = Node(state=new_state, parent=node, operator=None, 
+                         depth=node.depth + 1, cost=0)
+            successors.append(child)
+            
     return successors
 
 def queueing_function(nodes, new_nodes):
@@ -84,7 +154,7 @@ def main():
         # TODO: default puzzle dictionary
         print("Using default puzzle...")
         initial_state = [[1, 2, 3], [4, 8, 0], [7, 6, 5]] # example of puzzle
-    elif choice == '2':
+    elif choice == '2': 
         print("Enter your puzzle, use a zero to represent the blank.")
         row1 = list(map(int, input("Enter the first row, use space or tabs between numbers: ").split()))
         row2 = list(map(int, input("Enter the second row, use space or tabs between numbers: ").split()))
