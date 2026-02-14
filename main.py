@@ -83,9 +83,24 @@ def remove_front(nodes):
     # removes and returns the node with the lowest cost (g + h)
     return heapq.heappop(nodes)
 
+def get_goal_state(size):
+    """Generates an N x N goal state: [[1, 2, 3], [4, 5, 6], [7, 8, 0]]"""
+    goal = []
+    count = 1
+    for r in range(size):
+        row = []
+        for c in range(size):
+            if count == size * size:
+                row.append(0)
+            else:
+                row.append(count)
+            count += 1
+        goal.append(row)
+    return goal
+
+# update functions to use a dynamic goal:
 def goal_test(state):
-    # check if the current state matches the goal 
-    return state == GOAL_STATE
+    return state == get_goal_state(len(state))
 
 def expand(node):
     # generates the successors of a node by applying operators (moves).
@@ -135,29 +150,22 @@ def calculate_heuristic(state, heuristic_mode):
     # 3: Manhattan Distance Heuristic
     if heuristic_mode == 1:
         return 0
-    elif heuristic_mode == 2:
-        # count number of tiles are in wrong position
-        misplaced_count = 0
-        for i in range(3):
-            for j in range(3):
-                # blank (0) does not count as misplaced
-                if state[i][j] != 0 and state[i][j] != GOAL_STATE[i][j]:
-                    misplaced_count += 1
-        return misplaced_count
-    elif heuristic_mode == 3:
-        # sum Manhattan distance for each tile
-        manhattan_distance = 0
-        for i in range(3):
-            for j in range(3):
-                if state[i][j] != 0:  # skip blank tile (0)  
-                    tile = state[i][j]
-                    # find where tile should be in goal state
-                    goal_i = (tile - 1) // 3
-                    goal_j = (tile - 1) % 3
-                    # add the Manhattan distance (abs diff in rows + cols)
-                    manhattan_distance += abs(i - goal_i) + abs(j - goal_j)
-        return manhattan_distance
-    return 0
+    h = 0
+    size = len(state) # 3 for 8-puzzle, 4 for 15-puzzle
+    curr_goal = get_goal_state(size) 
+    for i in range(size):
+        for j in range(size):
+            tile = state[i][j]
+            if tile != 0:
+                if heuristic_mode == 2: # misplaced tile
+                    if tile != curr_goal[i][j]:
+                        h += 1
+                elif heuristic_mode == 3: # manhattan dist
+                    # target row/col based on the tile value
+                    target_i = (tile - 1) // size
+                    target_j = (tile - 1) % size
+                    h += abs(i - target_i) + abs(j - target_j)
+    return h
 
 def main():
     print("Welcome to 8-Puzzle Solver.")
@@ -166,15 +174,15 @@ def main():
     initial_state = []
     
     if choice == '1':
-        # TODO: default puzzle dictionary
+        # add default puzzle dictionary
         print("Using default puzzle...")
         initial_state = [[1, 2, 3], [4, 8, 0], [7, 6, 5]] # example of puzzle
-    elif choice == '2': 
-        print("Enter your puzzle, use a zero to represent the blank.")
-        row1 = list(map(int, input("Enter the first row, use space or tabs between numbers: ").split()))
-        row2 = list(map(int, input("Enter the second row, use space or tabs between numbers: ").split()))
-        row3 = list(map(int, input("Enter the third row, use space or tabs between numbers: ").split()))
-        initial_state = [row1, row2, row3]
+    elif choice == '2':
+        n = int(input("Enter puzzle side length (e.g., 3 for 8-puzzle, 4 for 15-puzzle): "))
+        print(f"Enter your puzzle row by row, use a zero to represent the blank.")
+        for i in range(n):
+            row = list(map(int, input(f"Enter row {i+1}: ").split()))
+            initial_state.append(row)
         
     algo_choice = int(input("Enter choice of algorithm\n1. Uniform Cost Search\n2. A* with the Misplaced Tile heuristic.\n3. A* with the Manhattan distance heuristic.\n"))
     
